@@ -73,6 +73,23 @@ npx markdown-to-googleslides markdown-to-googleslides-mcp
 
 This downloads and runs the tool without requiring global installation.
 
+### Try the Example
+
+Want to see what md2googleslides can do? Try our included example presentation:
+
+```sh
+# Download and run with the included example
+npx markdown-to-googleslides examples/basic-presentation.md --title "md2googleslides Demo"
+```
+
+This example demonstrates:
+- Title slides and section layouts
+- Code syntax highlighting
+- Lists and formatting
+- Two-column layouts
+- Big emphasis slides
+- Images and speaker notes
+
 ## Supported markdown rules
 
 md2gslides uses a subset of the [CommonMark](http://spec.commonmark.org/0.26/) and
@@ -588,6 +605,7 @@ Before using with Cursor, authenticate once via command line:
 ```bash
 npx markdown-to-googleslides --title "Test" < /dev/null
 ```
+
 
 Follow the OAuth flow to store your credentials.
 

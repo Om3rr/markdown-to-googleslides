@@ -100,8 +100,19 @@ parser.addArgument(['--use-fileio'], {
   dest: 'useFileio',
   required: false,
 });
+parser.addArgument(['--debug'], {
+  help: 'Enable debug logging',
+  action: 'storeTrue',
+  dest: 'debug',
+  required: false,
+});
 
 const args = parser.parseArgs();
+
+// Enable debug logging if requested
+if (args.debug) {
+  process.env.DEBUG = 'md2gslides';
+}
 
 function handleError(err) {
   console.log('Unable to generate slides:', err);
@@ -115,18 +126,22 @@ function prompt(url) {
     console.log('Authorize this app in your browser.');
     opener(url);
   }
+  console.log('\nAfter authorization, you can either:');
+  console.log('- Paste the complete callback URL (e.g., http://localhost:3000/oauth/callback?code=...)');
+  console.log('- Or just paste the authorization code from the URL');
+  
   return new Promise((resolve, reject) => {
     const rl = readline.createInterface({
       input: process.stdin,
       output: process.stdout,
     });
-    rl.question('Enter the code here: ', code => {
+    rl.question('\nEnter the callback URL or authorization code: ', input => {
       rl.close();
-      code = code.trim();
-      if (code.length > 0) {
-        resolve(code);
+      input = input.trim();
+      if (input.length > 0) {
+        resolve(input);
       } else {
-        reject(new Error('No code provided'));
+        reject(new Error('No authorization code or URL provided'));
       }
     });
   });

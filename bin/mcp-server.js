@@ -256,7 +256,7 @@ class MCPServer {
     return {
       content: [{
         type: 'text',
-        text: `✅ Successfully created Google Slides presentation!\n\n📊 **Presentation Details:**\n- **Title:** ${title}\n- **ID:** ${presentationId}\n- **URL:** ${url}\n- **Style:** ${style}\n- **File.io enabled:** ${useFileio ? 'Yes' : 'No'}\n\n🔗 You can view and edit your presentation at: ${url}`
+        text: `✅ Successfully created Google Slides presentation!\n\n🔗 **Presentation URL:** ${url}\n\n📊 **Details:**\n- **Title:** ${title}\n- **ID:** ${presentationId}\n- **Style:** ${style}\n- **File.io enabled:** ${useFileio ? 'Yes' : 'No'}`
       }]
     };
   }
@@ -279,7 +279,7 @@ class MCPServer {
     return {
       content: [{
         type: 'text',
-        text: `✅ Successfully ${erase ? 'replaced' : 'appended'} slides!\n\n📊 **Presentation Details:**\n- **ID:** ${resultId}\n- **URL:** ${url}\n- **Style:** ${style}\n- **Erased existing:** ${erase ? 'Yes' : 'No'}\n- **File.io enabled:** ${useFileio ? 'Yes' : 'No'}\n\n🔗 You can view and edit your presentation at: ${url}`
+        text: `✅ Successfully ${erase ? 'replaced' : 'appended'} slides!\n\n🔗 **Presentation URL:** ${url}\n\n📊 **Details:**\n- **ID:** ${resultId}\n- **Style:** ${style}\n- **Erased existing:** ${erase ? 'Yes' : 'No'}\n- **File.io enabled:** ${useFileio ? 'Yes' : 'No'}`
       }]
     };
   }

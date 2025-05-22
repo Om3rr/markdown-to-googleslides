@@ -5,8 +5,9 @@
       "@babel/preset-env",
       {
         "targets": {
-          "node": "8"
-        }
+          "node": "18"
+        },
+        "exclude": ["@babel/plugin-transform-dynamic-import"]
       }
     ]
   ],

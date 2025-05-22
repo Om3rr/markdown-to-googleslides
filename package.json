@@ -1,6 +1,6 @@
 {
   "name": "markdown-to-googleslides",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Modern CLI tool and MCP server to convert Markdown to Google Slides presentations with Node.js 22+ support",
   "main": "index.js",
   "files": [
