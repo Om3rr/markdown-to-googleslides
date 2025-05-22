@@ -31,9 +31,12 @@ Then get your OAuth client ID credentials:
 * Enable Google Slides API at [API library page](https://console.developers.google.com/apis/library)
 * Go to [Credentials page](https://console.developers.google.com/apis/credentials) and click "+ Create credentials" at the top
 * Select "OAuth client ID" authorization credentials
-* Choose type "Computer Application" and give it some name.
-* Download client credentials file.
-* Copy it to `client_id.json` (name has to match) and save to `~/.md2googleslides`.
+* **Choose type "Web application"** (NOT "Desktop application") and give it some name
+* Add `http://localhost:3000/oauth/callback` to "Authorized redirect URIs"
+* Download client credentials file
+* Copy it to `client_id.json` (name has to match) and save to `~/.md2googleslides`
+
+**Important:** The tool requires a **Web application** OAuth client, not a Desktop/Computer application client. This enables proper redirect handling during authentication.
 
 After installing, import your slides by running:
 
@@ -450,7 +453,7 @@ Alternatively, install the package and its dependencies:
 npm install markdown-to-googleslides
 ```
 
-**Prerequisites:** Ensure you have the required Google OAuth credentials set up as described in the Installation section above.
+**Prerequisites:** Ensure you have the required Google OAuth credentials set up as described in the Installation section above. **Important:** Make sure to use a "Web application" OAuth client type, not "Desktop application".
 
 ### Running the MCP Server
 
@@ -531,6 +534,15 @@ markdown-to-googleslides --title "Test" < /dev/null
 This will prompt for authentication and store the credentials in `~/.md2googleslides/credentials.json` for use by the MCP server.
 
 **Note:** The authentication is stored globally on your system, so you only need to authenticate once regardless of how you run the tools (npx, global install, or local).
+
+### OAuth Troubleshooting
+
+If you encounter authentication errors:
+
+1. **"Invalid client" errors**: Make sure you're using a "Web application" OAuth client, not "Desktop application"
+2. **"Redirect URI mismatch"**: Ensure `http://localhost:3000/oauth/callback` is added to your OAuth client's authorized redirect URIs
+3. **"Invalid scope" errors**: Verify that Google Slides API is enabled in your Google Cloud Console project
+4. **Credential file issues**: Ensure `client_id.json` is properly formatted and contains the `web` configuration section
 
 ### Using with Cursor
 
