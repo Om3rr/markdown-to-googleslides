@@ -45,3 +45,4 @@ jspm_packages
 
 # Exclude the compiled lib directory
 lib
+slide.md
