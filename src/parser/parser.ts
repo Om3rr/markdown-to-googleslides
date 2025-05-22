@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import markdownIt from 'markdown-it';
-import Token from 'markdown-it/lib/token';
+import markdownIt, { Token } from 'markdown-it';
 // @ts-ignore
 import attrs from 'markdown-it-attrs';
 // @ts-ignore

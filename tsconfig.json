@@ -4,7 +4,9 @@
     "rootDir": ".",
     "outDir": "lib",
     "esModuleInterop": true,
-    "noEmit": true
+    "noEmit": true,
+    "lib": ["esnext", "dom"],
+    "skipLibCheck": true
   },
   "include": [
     "src/**/*.ts",

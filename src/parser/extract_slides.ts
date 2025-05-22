@@ -14,7 +14,7 @@
 
 import Debug from 'debug';
 import extend from 'extend';
-import Token from 'markdown-it/lib/token';
+import { Token } from 'markdown-it';
 import parse5, {Element} from 'parse5';
 import fileUrl from 'file-url';
 import {SlideDefinition, StyleDefinition} from '../slides';
@@ -45,7 +45,7 @@ function attr(token: Token, name: string): string | undefined {
   if (!token.attrs) {
     return undefined;
   }
-  const attr = token.attrs.find(a => a[0] === name);
+  const attr = token.attrs.find((a: [string, string]) => a[0] === name);
   if (!attr) {
     return undefined;
   }
@@ -87,7 +87,7 @@ function applyTokenStyle(
   if (!token.attrs) {
     return style;
   }
-  const styleAttr = token.attrs.find(attr => attr[0] === 'style');
+  const styleAttr = token.attrs.find((attr: [string, string]) => attr[0] === 'style');
   if (styleAttr === undefined) {
     return style;
   }

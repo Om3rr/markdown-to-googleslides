@@ -11,10 +11,18 @@ Contributions are welcome.
 
 ## Installation and usage
 
-For command line use, install md2gslides globally:
+### Option 1: Using npx (Recommended - No installation required)
 
 ```sh
-npm install -g md2gslides
+npx markdown-to-googleslides slides.md --title "Talk Title"
+```
+
+### Option 2: Global installation
+
+For command line use, install markdown-to-googleslides globally:
+
+```sh
+npm install -g markdown-to-googleslides
 ```
 
 Then get your OAuth client ID credentials:
@@ -30,7 +38,7 @@ Then get your OAuth client ID credentials:
 After installing, import your slides by running:
 
 ```sh
-md2gslides slides.md --title "Talk Title"
+markdown-to-googleslides slides.md --title "Talk Title"
 ```
 
 This will generate new Google Slides in your account with title `Talk Title`. 
@@ -43,8 +51,22 @@ deck, just get the ID of the already generated slides. For example, you can use 
 
 ```
 # To reuse deck available at: https://docs.google.com/presentation/d/<some id>/edit#
-md2gslides slides.md --title "Talk Title" --append <some id> --erase
+markdown-to-googleslides slides.md --title "Talk Title" --append <some id> --erase
 ```
+
+### Quick Start with npx (No Installation Required)
+
+For one-time usage or trying out the tool, you can use npx:
+
+```sh
+# CLI tool
+npx markdown-to-googleslides slides.md --title "Talk Title"
+
+# MCP Server (for AI assistants)
+npx markdown-to-googleslides markdown-to-googleslides-mcp
+```
+
+This downloads and runs the tool without requiring global installation.
 
 ## Supported markdown rules
 
@@ -405,6 +427,194 @@ Pull requests for other image generators (e.g. mermaid, chartjs, etc.) are welco
 ## Reading from standard input
 
 You can also pipe markdown into the tool by omitting the file name argument.
+
+## MCP Server
+
+md2googleslides also provides a Model Context Protocol (MCP) server that can be used by AI assistants to generate Google Slides presentations from markdown content.
+
+### Installation for MCP
+
+#### Quick Start with npx (No installation required)
+
+You can run the MCP server directly without installation using npx:
+
+```sh
+npx markdown-to-googleslides markdown-to-googleslides-mcp
+```
+
+#### Traditional Installation
+
+Alternatively, install the package and its dependencies:
+
+```sh
+npm install markdown-to-googleslides
+```
+
+**Prerequisites:** Ensure you have the required Google OAuth credentials set up as described in the Installation section above.
+
+### Running the MCP Server
+
+#### Option 1: Using npx (Recommended - No installation required)
+
+Run the MCP server directly without installation:
+
+```sh
+npx markdown-to-googleslides markdown-to-googleslides-mcp
+```
+
+#### Option 2: Local installation
+
+Install the package and run:
+
+```sh
+npm install markdown-to-googleslides
+npx markdown-to-googleslides-mcp
+```
+
+#### Option 3: From source
+
+If you have the source code:
+
+```sh
+node bin/mcp-server.js
+```
+
+The server will run on stdio and can be integrated with MCP-compatible AI assistants.
+
+### Available MCP Tools
+
+The MCP server provides three main tools:
+
+#### 1. `create-google-slides`
+Creates a new Google Slides presentation from markdown content.
+
+**Parameters:**
+- `markdown` (required): Markdown content to convert to slides
+- `title` (optional): Title of the presentation
+- `style` (optional): Highlight.js theme for code formatting (default: "default")
+- `useFileio` (optional): Allow uploading local/generated images to file.io (default: false)
+
+#### 2. `append-to-slides`
+Appends markdown content to an existing Google Slides presentation.
+
+**Parameters:**
+- `presentationId` (required): ID of the existing presentation to append to
+- `markdown` (required): Markdown content to convert and append as slides
+- `style` (optional): Highlight.js theme for code formatting (default: "default")
+- `erase` (optional): Erase existing slides before appending (default: false)
+- `useFileio` (optional): Allow uploading local/generated images to file.io (default: false)
+
+#### 3. `copy-and-create-slides`
+Copies an existing presentation and creates new slides from markdown.
+
+**Parameters:**
+- `copyFromId` (required): ID of the presentation to copy as a base
+- `markdown` (required): Markdown content to convert to slides
+- `title` (optional): Title of the new presentation
+- `style` (optional): Highlight.js theme for code formatting (default: "default")
+- `useFileio` (optional): Allow uploading local/generated images to file.io (default: false)
+
+### MCP Authentication
+
+The MCP server uses the same authentication mechanism as the CLI tool. You must first authenticate using the CLI tool before using the MCP server:
+
+**With npx:**
+```sh
+npx markdown-to-googleslides --title "Test" < /dev/null
+```
+
+**With global installation:**
+```sh
+markdown-to-googleslides --title "Test" < /dev/null
+```
+
+This will prompt for authentication and store the credentials in `~/.md2googleslides/credentials.json` for use by the MCP server.
+
+**Note:** The authentication is stored globally on your system, so you only need to authenticate once regardless of how you run the tools (npx, global install, or local).
+
+### Using with Cursor
+
+[Cursor](https://cursor.sh/) is an AI-powered code editor that supports MCP servers. To use md2googleslides with Cursor:
+
+#### 1. Configure MCP Server in Cursor
+
+Add the following to your Cursor MCP configuration file (usually located at `~/.cursor/mcp_servers.json`):
+
+```json
+{
+  "markdown-to-googleslides": {
+    "command": "npx",
+    "args": ["markdown-to-googleslides", "markdown-to-googleslides-mcp"]
+  }
+}
+```
+
+#### 2. Alternative: Local Installation
+
+If you prefer not to use npx, install globally and configure:
+
+```bash
+npm install -g markdown-to-googleslides
+```
+
+Then update your MCP configuration:
+
+```json
+{
+  "markdown-to-googleslides": {
+    "command": "markdown-to-googleslides-mcp"
+  }
+}
+```
+
+#### 3. Authentication Setup
+
+Before using with Cursor, authenticate once via command line:
+
+```bash
+npx markdown-to-googleslides --title "Test" < /dev/null
+```
+
+Follow the OAuth flow to store your credentials.
+
+#### 4. Using in Cursor
+
+Once configured, you can use Cursor's AI assistant to:
+
+- **Create presentations**: "Create a Google Slides presentation about machine learning basics"
+- **Generate from content**: "Convert this markdown document to Google Slides"
+- **Append to existing**: "Add these bullet points to presentation ID abc123"
+- **Copy and modify**: "Copy presentation xyz789 and update it with this new content"
+
+The AI will automatically use the md2googleslides MCP server to generate presentations directly in your Google Drive.
+
+#### 5. Available Commands in Cursor
+
+When the MCP server is active, Cursor's AI can access these tools:
+
+- `create-google-slides` - Create new presentations
+- `append-to-slides` - Add slides to existing presentations  
+- `copy-and-create-slides` - Copy and modify existing presentations
+
+#### Troubleshooting
+
+- **Authentication errors**: Re-run the authentication command above
+- **Server not found**: Restart Cursor after updating MCP configuration
+- **Connection issues**: Check that Node.js and npm are properly installed
+
+### Supported Markdown Features (MCP)
+
+The MCP server supports all the same markdown features as the CLI tool:
+- Headers for slide titles
+- Lists (ordered and unordered)
+- Code blocks with syntax highlighting
+- Tables
+- Images (with `useFileio` option for local images)
+- Videos
+- Speaker notes (HTML comments)
+- Two-column layouts
+- Custom slide layouts
+- Styling and formatting
 
 ## Contributing
 

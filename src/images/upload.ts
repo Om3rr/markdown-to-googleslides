@@ -14,7 +14,7 @@
 
 import Debug from 'debug';
 import fs from 'fs';
-import request from 'request-promise-native';
+import path from 'path';
 
 const debug = Debug('md2gslides');
 
@@ -28,24 +28,61 @@ const debug = Debug('md2gslides');
  */
 async function uploadLocalImage(filePath: string): Promise<string> {
   debug('Registering file %s', filePath);
-  const stream = fs.createReadStream(filePath);
+  
   try {
-    const params = {
-      file: stream,
-    };
-    const res = await request.post({
-      url: 'https://file.io?expires=1h',
-      formData: params,
+    // Read file as buffer
+    const fileBuffer = fs.readFileSync(filePath);
+    const fileName = path.basename(filePath);
+    
+    // Create FormData with Blob for better Node.js compatibility
+    const formData = new FormData();
+    const blob = new Blob([fileBuffer], { 
+      type: 'application/octet-stream' 
     });
-    const responseData = JSON.parse(res);
-    if (!responseData.success) {
-      debug('Unable to upload file: %O', responseData);
-      throw res;
+    formData.append('file', blob, fileName);
+
+    debug('Uploading file to file.io...');
+    const response = await fetch('https://file.io', {
+      method: 'POST',
+      body: formData,
+    });
+
+    debug('Response status: %d', response.status);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      debug('HTTP error response: %s', errorText);
+      throw new Error(`HTTP error! status: ${response.status}, response: ${errorText}`);
     }
+
+    const contentType = response.headers.get('content-type');
+    debug('Response content-type: %s', contentType);
+    
+    if (!contentType || !contentType.includes('application/json')) {
+      const responseText = await response.text();
+      debug('Non-JSON response received: %s', responseText.substring(0, 200));
+      throw new Error(`Expected JSON response but got ${contentType}. Response: ${responseText.substring(0, 200)}`);
+    }
+
+    const responseData = await response.json();
+    debug('Upload response: %O', responseData);
+    
+    if (!responseData.success) {
+      debug('Upload failed: %O', responseData);
+      throw new Error(`Upload failed: ${responseData.message || JSON.stringify(responseData)}`);
+    }
+    
+    if (!responseData.link) {
+      throw new Error('No download link in response');
+    }
+    
     debug('Temporary link: %s', responseData.link);
     return responseData.link;
-  } finally {
-    stream.destroy();
+  } catch (error) {
+    debug('Error uploading file: %O', error);
+    // Re-throw with more context
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to upload ${filePath}: ${errorMessage}`);
   }
 }
 

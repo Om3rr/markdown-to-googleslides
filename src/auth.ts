@@ -16,9 +16,6 @@ import Debug from 'debug';
 import {OAuth2Client, Credentials} from 'google-auth-library';
 import path from 'path';
 import mkdirp from 'mkdirp';
-import lowdb from 'lowdb';
-import FileSync from 'lowdb/adapters/FileSync';
-import Memory from 'lowdb/adapters/Memory';
 
 const debug = Debug('md2gslides');
 
@@ -29,110 +26,101 @@ export interface AuthOptions {
   clientSecret: string;
   prompt: UserPrompt;
   filePath?: string;
+  redirectUri?: string;
+}
+
+interface DatabaseSchema {
+  [user: string]: Credentials;
 }
 
 /**
- * Handles the authorization flow, intended for command line usage.
- *
- * @example
- *   var auth = new UserAuthorizer({
- *     clientId: 'my-client-id',
- *     clientSecret: 'my-client-secret',
- *     filePath: '/path/to/persistent/token/storage'
- *     prompt: function(url) { ... }
- *   });
- *
- *   var credentials = auth.getUserCredentials('user@example.com', 'https://www.googleapis.com/auth/slides');
- *   credentials.then(function(oauth2Client) {
- *     // Valid oauth2Client for use with google APIs.
- *   });
- *
- *   @callback UserAuthorizer-promptCallback
- *   @param {String} url Authorization URL to display to user or open in browser
- *   @returns {Promise.<String>} Promise yielding the authorization code
+ * Simplified OAuth authorizer using the most basic flow.
  */
 export default class UserAuthorizer {
-  private redirectUrl = 'urn:ietf:wg:oauth:2.0:oob';
-  private db: lowdb.LowdbSync<Credentials>;
+  private db: any; // Dynamic import of Low<DatabaseSchema>
   private clientId: string;
   private clientSecret: string;
   private prompt: UserPrompt;
+  private redirectUri: string;
+  private filePath?: string;
 
-  /**
-   * Initialize the authorizer.
-   *
-   * This may block briefly to ensure the token file exists.
-   *
-   * @param options
-   */
   public constructor(options: AuthOptions) {
-    this.db = UserAuthorizer.initDbSync(options?.filePath);
+    this.db = null; // Will be initialized lazily
     this.clientId = options.clientId;
     this.clientSecret = options.clientSecret;
     this.prompt = options.prompt;
+    this.redirectUri = options.redirectUri || 'urn:ietf:wg:oauth:2.0:oob';
+    this.filePath = options?.filePath;
+  }
+  
+  private async initDb() {
+    if (!this.db) {
+      this.db = await UserAuthorizer.initDbSync(this.filePath);
+    }
+    return this.db;
   }
 
-  /**
-   * Fetch credentials for the specified user.
-   *
-   * If no credentials are available, requests authorization.
-   *
-   * @param {String} user ID (email address) of user to get credentials for.
-   * @param {String} scopes Authorization scopes to request
-   * @returns {Promise.<google.auth.OAuth2>}
-   */
   public async getUserCredentials(
     user: string,
     scopes: string
   ): Promise<OAuth2Client> {
+    // Use configurable redirect URI
     const oauth2Client = new OAuth2Client(
       this.clientId,
       this.clientSecret,
-      this.redirectUrl
+      this.redirectUri
     );
-    oauth2Client.on('tokens', (tokens: Credentials) => {
-      if (tokens.refresh_token) {
-        debug('Saving refresh token');
-        this.db.set(user, tokens).write();
-      }
-    });
 
-    const tokens = this.db.get(user).value();
+    // Ensure db is initialized
+    const db = await this.initDb();
+    await db.read();
+
+    // Check for existing tokens
+    const tokens = db.data[user];
     if (tokens) {
-      debug('User previously authorized, refreshing');
+      debug('Using existing tokens');
       oauth2Client.setCredentials(tokens);
-      await oauth2Client.getAccessToken();
-      return oauth2Client;
+      try {
+        await oauth2Client.getAccessToken();
+        return oauth2Client;
+      } catch (error) {
+        debug('Existing tokens invalid, need new authorization');
+        // Continue to get new tokens
+      }
     }
 
-    debug('Challenging for authorization');
+    // Get new authorization
+    debug('Getting new authorization');
     const authUrl = oauth2Client.generateAuthUrl({
-      access_type: 'offline',
+      access_type: 'online',
       scope: scopes,
-      login_hint: user,
     });
+
     const code = await this.prompt(authUrl);
     const tokenResponse = await oauth2Client.getToken(code);
+    
+    // Save tokens
     oauth2Client.setCredentials(tokenResponse.tokens);
+    db.data[user] = tokenResponse.tokens;
+    await db.write();
+    
     return oauth2Client;
   }
 
-  /**
-   * Initialzes the token database.
-   *
-   * @param {String} filePath Path to database, null if use in-memory DB only.
-   * @returns {lowdb} database instance
-   * @private
-   */
-  private static initDbSync<T>(filePath?: string): lowdb.LowdbSync<T> {
-    let adapter: lowdb.AdapterSync;
+  private static async initDbSync<T extends DatabaseSchema>(filePath?: string): Promise<any> {
+    const { Low } = await import('lowdb');
+    const { JSONFile } = await import('lowdb/node');
+    
     if (filePath) {
       const parentDir = path.dirname(filePath);
       mkdirp.sync(parentDir);
-      adapter = new FileSync<T>(filePath);
+      const adapter = new JSONFile<T>(filePath);
+      const db = new Low<T>(adapter, {} as T);
+      return db;
     } else {
-      adapter = new Memory<T>('');
+      // For in-memory, we still need a minimal adapter-like structure
+      const db = new Low<T>(new JSONFile<T>(''), {} as T);
+      return db;
     }
-    return lowdb(adapter);
   }
 }

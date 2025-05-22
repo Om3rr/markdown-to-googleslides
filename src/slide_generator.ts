@@ -73,6 +73,7 @@ export default class SlideGenerator {
     oauth2Client: OAuth2Client,
     title: string
   ): Promise<SlideGenerator> {
+    console.log('🆕 Creating new presentation...');
     const api = google.slides({version: 'v1', auth: oauth2Client});
     const res = await api.presentations.create({
       requestBody: {
@@ -80,6 +81,7 @@ export default class SlideGenerator {
       },
     });
     const presentation = res.data;
+    console.log(`✅ Created presentation: "${title}"`);
     return new SlideGenerator(api, presentation);
   }
 
@@ -96,6 +98,7 @@ export default class SlideGenerator {
     title: string,
     presentationId: string
   ): Promise<SlideGenerator> {
+    console.log(`📋 Copying presentation ${presentationId}...`);
     const drive = google.drive({version: 'v3', auth: oauth2Client});
     const res = await drive.files.copy({
       fileId: presentationId,
@@ -104,6 +107,7 @@ export default class SlideGenerator {
       },
     });
     assert(res.data.id);
+    console.log(`✅ Copied to new presentation: "${title}"`);
     return SlideGenerator.forPresentation(oauth2Client, res.data.id);
   }
 
@@ -118,9 +122,11 @@ export default class SlideGenerator {
     oauth2Client: OAuth2Client,
     presentationId: string
   ): Promise<SlideGenerator> {
+    console.log(`📖 Opening existing presentation ${presentationId}...`);
     const api = google.slides({version: 'v1', auth: oauth2Client});
     const res = await api.presentations.get({presentationId: presentationId});
     const presentation = res.data;
+    console.log(`✅ Loaded presentation: "${presentation.title}"`);
     return new SlideGenerator(api, presentation);
   }
 
@@ -137,14 +143,28 @@ export default class SlideGenerator {
     {css, useFileio}: {css: string; useFileio: boolean}
   ): Promise<string> {
     assert(this.presentation?.presentationId);
+    
+    console.log('📄 Parsing markdown content...');
     this.slides = extractSlides(markdown, css);
+    console.log(`✅ Parsed ${this.slides.length} slides`);
+    
     this.allowUpload = useFileio;
+    
+    console.log('🖼️  Processing images...');
     await this.generateImages();
+    console.log('📏 Probing image sizes...');
     await this.probeImageSizes();
+    console.log('☁️  Uploading local images...');
     await this.uploadLocalImages();
+    
+    console.log('🎨 Creating slide layouts...');
     await this.updatePresentation(this.createSlides());
     await this.reloadPresentation();
+    
+    console.log('📝 Populating slide content...');
     await this.updatePresentation(this.populateSlides());
+    
+    console.log('✨ Presentation generation complete!');
     return this.presentation.presentationId;
   }
 
@@ -160,6 +180,7 @@ export default class SlideGenerator {
       return Promise.resolve();
     }
 
+    console.log(`🗑️  Removing ${this.presentation.slides.length} existing slides...`);
     const requests = this.presentation.slides.map(slide => ({
       deleteObject: {
         objectId: slide.objectId,
@@ -170,21 +191,28 @@ export default class SlideGenerator {
       presentationId: this.presentation.presentationId,
       requestBody: batch,
     });
+    console.log('✅ Existing slides removed');
   }
 
   protected async processImages<T>(
     fn: (img: ImageDefinition) => Promise<T>
   ): Promise<void> {
     const promises = [];
+    let imageCount = 0;
     for (const slide of this.slides) {
       if (slide.backgroundImage) {
         promises.push(fn(slide.backgroundImage));
+        imageCount++;
       }
       for (const body of slide.bodies) {
         for (const image of body.images) {
           promises.push(fn(image));
+          imageCount++;
         }
       }
+    }
+    if (imageCount > 0) {
+      debug(`Processing ${imageCount} images`);
     }
     await Promise.all(promises);
   }

@@ -16,7 +16,7 @@
 
 /* eslint-disable no-console, @typescript-eslint/no-var-requires */
 
-require('babel-polyfill');
+// babel-polyfill is no longer needed with modern Node.js
 
 const Promise = require('promise');
 const fs = require('fs');
@@ -133,15 +133,8 @@ function prompt(url) {
 }
 
 function authorizeUser() {
-  // Google OAuth2 clients always have a secret, even if the client is an installed
-  // application/utility such as this.  Of course, in such cases the "secret" is
-  // actually publicly known; security depends entirely on the secrecy of refresh
-  // tokens, which effectively become bearer tokens.
-
-  // Load and parse client ID and secret from client_id.json file. (Create
-  // OAuth client ID from Credentials tab at console.developers.google.com
-  // and download the credentials as client_id.json to ~/.md2googleslides
-  let data; // needs to be scoped outside of try-catch
+  // Load and parse client ID and secret from client_id.json file.
+  let data;
   try {
     data = fs.readFileSync(STORED_CLIENT_ID_PATH);
   } catch (err) {
@@ -152,13 +145,49 @@ function authorizeUser() {
     console.log('Error loading client secret data');
     throw 'No client secret found.';
   }
-  const creds = JSON.parse(data).installed;
+  
+  const credsJson = JSON.parse(data);
+  
+  // Detect client type and configure accordingly
+  let creds, redirectUri, clientType;
+  
+  if (credsJson.web) {
+    // Web application client
+    creds = credsJson.web;
+    clientType = 'web';
+    
+    if (creds.redirect_uris && creds.redirect_uris.length > 0) {
+      redirectUri = creds.redirect_uris[0];
+      console.log(`INFO: Using web client with redirect URI: ${redirectUri}`);
+      console.log('Make sure this redirect URI is configured in your Google Cloud Console.');
+      console.log('After authorization, copy the "code" parameter from the redirect URL.');
+    } else {
+      console.log('ERROR: Web client requires redirect_uris in client_id.json');
+      throw new Error('Web client missing redirect_uris');
+    }
+  } else if (credsJson.installed) {
+    // Desktop/installed application client  
+    creds = credsJson.installed;
+    clientType = 'installed';
+    redirectUri = 'urn:ietf:wg:oauth:2.0:oob'; // Use OOB for installed apps
+    console.log('INFO: Using installed/desktop client with Out-of-Band (OOB) flow');
+  } else {
+    console.log('ERROR: client_id.json must contain either "web" or "installed" client configuration');
+    throw new Error('Invalid client_id.json format');
+  }
 
-  // Authorize user and get (& store) a valid access token.
+  if (!creds || !creds.client_id || !creds.client_secret) {
+    console.log('ERROR: Missing client_id or client_secret in configuration');
+    throw new Error('Invalid client credentials');
+  }
+
+  console.log(`Using ${clientType} OAuth client type`);
+
   const options = {
     clientId: creds.client_id,
     clientSecret: creds.client_secret,
     filePath: STORED_CREDENTIALS_PATH,
+    redirectUri: redirectUri, // Pass the redirect URI
     prompt: prompt,
   };
   const auth = new UserAuthorizer(options);
