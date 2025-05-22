@@ -1,6 +1,8 @@
 Generate Google Slides from markdown & HTML. Run from the command line or embed in another
 application.
 
+> **📝 Attribution:** This is a modernized version of the original [md2googleslides](https://github.com/googleworkspace/md2googleslides) created by Steven Bazyl and Google Inc. See [Attribution & License](#attribution--license) section for full details.
+
 This project was developed as an example of how to use the
 [Slides API](https://developers.google.com/slides).
 
@@ -627,6 +629,39 @@ The MCP server supports all the same markdown features as the CLI tool:
 - Two-column layouts
 - Custom slide layouts
 - Styling and formatting
+
+## Attribution & License
+
+This project is based on the original **md2googleslides** created by **Steven Bazyl** and the **Google Workspace Developer Samples team**.
+
+- **Original Repository**: [googleworkspace/md2googleslides](https://github.com/googleworkspace/md2googleslides)
+- **Original Author**: Steven Bazyl
+- **Original Copyright**: © 2016 Google Inc.
+- **License**: Apache License 2.0
+
+### Changes Made in This Version
+
+This modernized version (`markdown-to-googleslides`) includes significant modifications to the original work:
+
+- **Updated for Node.js 22+ compatibility** with modern dependency versions
+- **Added Model Context Protocol (MCP) server functionality** for AI assistant integration
+- **Fixed authentication issues** with dynamic imports for lowdb v7 compatibility
+- **Added comprehensive npx support** for installation-free usage
+- **Updated all dependencies** to latest secure versions
+- **Added Cursor editor integration** documentation and configuration
+- **Enhanced error handling** and logging throughout the codebase
+- **Modernized TypeScript/Babel build pipeline** with updated tooling
+- **Added dual binary support** for both CLI and MCP server modes
+
+### License Compliance
+
+This project complies with the Apache License 2.0 requirements:
+- ✅ **License file included**: See [LICENSE](LICENSE) file
+- ✅ **Notice file included**: See [NOTICE](NOTICE) file with proper attribution
+- ✅ **Attribution provided**: Original authors credited above  
+- ✅ **Changes documented**: Modifications clearly stated above
+- ✅ **Copyright preserved**: Original copyright notices maintained in source files
+- ✅ **No trademark infringement**: Published under different package name
 
 ## Contributing
 
